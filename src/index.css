@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --paper: #f5f1e8;
+    --paper-card: #fffdf8;
+    --ink: #242824;
+    --blue: #6c91a3;
+    --blue2: #d9e4e6;
+    --red: #bc553b;
+    --muted: #777a74;
+    --line: #d9d3c8;
+    --line-subtle: #e8e3d8;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    min-height: 100vh;
+  }
+}
+
+.font-serif-tc {
+  font-family: 'Noto Serif TC', Georgia, Cambria, serif;
+}
+
+.font-sans-tc {
+  font-family: 'Noto Sans TC', system-ui, sans-serif;
+}
+
+/* Subtle organic paper texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  z-index: 40;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
+}
+
+/* Print styles for travel physical booklet / PDF */
+@media print {
+  body::before {
+    display: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-break-inside-avoid {
+    break-inside: avoid;
+  }
+}
+
+/* Custom scrollbars that match the paper aesthetics */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4cdc1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b5ada0;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "青森冬旅 · 旅遊行程規劃手帳",
+  "description": "專為多日深度旅行設計的行程規劃工具，支援每日行程編輯、備註提醒、拖拉排序、地圖預覽與出發準備清單。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
