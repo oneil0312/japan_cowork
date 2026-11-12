@@ -29,6 +29,7 @@ interface DayPanelProps {
   onToggleComplete: (stopId: string) => void;
   onEditDay: () => void;
   onMoveStopToDay: (stopId: string, targetDayId: string) => void;
+  onDeleteDay?: (index: number) => void;
 }
 
 export const DayPanel: React.FC<DayPanelProps> = ({
@@ -42,7 +43,8 @@ export const DayPanel: React.FC<DayPanelProps> = ({
   onReorderStops,
   onToggleComplete,
   onEditDay,
-  onMoveStopToDay
+  onMoveStopToDay,
+  onDeleteDay
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -137,15 +139,29 @@ export const DayPanel: React.FC<DayPanelProps> = ({
             <h3 className="font-serif-tc text-xl sm:text-2xl font-semibold tracking-wide text-[#242824]">
               {day.title}
             </h3>
-            <button
-              onClick={onEditDay}
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-serif-tc text-[#777a74] hover:text-[#bc553b] border border-[#d9d3c8] hover:border-[#bc553b] bg-[#fffdf8] transition-colors shrink-0"
-              title="編輯本日標題與描述"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>編輯本天</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={onEditDay}
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-serif-tc text-[#777a74] hover:text-[#bc553b] border border-[#d9d3c8] hover:border-[#bc553b] bg-[#fffdf8] transition-colors"
+                title="編輯本日標題與描述"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>編輯本天</span>
+              </button>
+
+              {totalDays > 1 && onDeleteDay && (
+                <button
+                  onClick={() => onDeleteDay(dayIndex)}
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-serif-tc text-[#777a74] hover:text-[#bc553b] hover:bg-[#fbf0f0] border border-[#d9d3c8] hover:border-[#bc553b] bg-[#fffdf8] transition-colors"
+                  title="刪除本日日程"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-[#bc553b]" />
+                  <span className="hidden sm:inline">刪除本天</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <p className="font-sans-tc text-sm text-[#555c59] mt-2.5 leading-relaxed">

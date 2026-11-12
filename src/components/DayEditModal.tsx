@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Edit3, MapPin, Tag } from 'lucide-react';
+import { X, Calendar, Edit3, MapPin, Tag, Trash2 } from 'lucide-react';
 import { DayPlan, MapNode } from '../types';
 
 interface DayEditModalProps {
@@ -9,6 +9,8 @@ interface DayEditModalProps {
   day: DayPlan | null;
   dayIndex: number;
   availableNodes: Record<string, MapNode>;
+  totalDays?: number;
+  onDeleteDay?: (index: number) => void;
 }
 
 export const DayEditModal: React.FC<DayEditModalProps> = ({
@@ -17,7 +19,9 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
   onSave,
   day,
   dayIndex,
-  availableNodes
+  availableNodes,
+  totalDays,
+  onDeleteDay
 }) => {
   const [date, setDate] = useState('');
   const [week, setWeek] = useState('SAT');
@@ -191,20 +195,39 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#d9d3c8]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-serif-tc text-[#777a74] hover:text-[#242824] hover:bg-[#f5f1e8] border border-transparent transition-colors"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 text-xs font-serif-tc text-white bg-[#bc553b] hover:bg-[#a64730] transition-colors tracking-widest shadow-xs"
-            >
-              儲存變更
-            </button>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#d9d3c8]">
+            {totalDays && totalDays > 1 && onDeleteDay ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onDeleteDay(dayIndex);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-serif-tc text-[#bc553b] hover:bg-[#fbf0f0] border border-transparent hover:border-[#bc553b] transition-colors"
+                title="刪除這一天日程"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>刪除這一天</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-serif-tc text-[#777a74] hover:text-[#242824] hover:bg-[#f5f1e8] border border-transparent transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 text-xs font-serif-tc text-white bg-[#bc553b] hover:bg-[#a64730] transition-colors tracking-widest shadow-xs"
+              >
+                儲存變更
+              </button>
+            </div>
           </div>
         </form>
       </div>

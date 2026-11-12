@@ -85,16 +85,17 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                 </div>
               </button>
 
-              {/* Day options trigger (dots on hover) */}
+              {/* Day options trigger (visible and accessible) */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpenIndex(menuOpenIndex === idx ? null : idx);
                 }}
-                className={`absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity ${
+                className={`absolute top-0 right-0 p-1 opacity-70 group-hover:opacity-100 hover:opacity-100 transition-opacity cursor-pointer ${
                   isActive ? 'text-white' : 'text-[#777a74] hover:text-[#bc553b]'
                 }`}
                 title="天數操作選單"
+                aria-label={`Day ${idx + 1} 選單`}
               >
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
@@ -156,10 +157,8 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                   {days.length > 1 && (
                     <button
                       onClick={() => {
-                        if (confirm(`確定要刪除 Day ${idx + 1} (${day.date}) 嗎？其內的所有行程將會一併移除。`)) {
-                          onDeleteDay(idx);
-                        }
                         setMenuOpenIndex(null);
+                        onDeleteDay(idx);
                       }}
                       className="w-full text-left px-2 py-1.5 hover:bg-[#fbf0f0] flex items-center gap-1.5 text-[#bc553b] border-t border-[#e8e3d8]"
                     >

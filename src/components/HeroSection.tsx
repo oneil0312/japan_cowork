@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plane, Edit2, Clock, Calendar, CheckSquare, Star, X, Cloud } from 'lucide-react';
+import { Plane, Edit2, Clock, Calendar, CheckSquare, Star, X, Cloud, Plus, Trash2 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { TripPlan, FlightInfo } from '../types';
 
@@ -68,7 +68,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   );
   const checkedItems = trip.checklist.filter((c) => c.checked).length;
 
-  // Flight editing
+  // Flight editing & adding
+  const handleOpenAddFlight = () => {
+    setEditingFlight(null);
+    setFlightLabel('交通安排');
+    setFlightRoute('');
+    setFlightNumber('');
+    setFlightNotes('');
+    setIsFlightModalOpen(true);
+  };
+
   const handleOpenEditFlight = (flight: FlightInfo) => {
     setEditingFlight(flight);
     setFlightLabel(flight.label);
@@ -78,22 +87,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     setIsFlightModalOpen(true);
   };
 
+  const handleDeleteFlight = (flightId: string) => {
+    const updated = trip.flights.filter((f) => f.id !== flightId);
+    onUpdateFlights(updated);
+    setIsFlightModalOpen(false);
+  };
+
   const handleSaveFlight = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingFlight) return;
+    if (!flightRoute.trim()) return;
 
-    const updated = trip.flights.map((f) =>
-      f.id === editingFlight.id
-        ? {
-            ...f,
-            label: flightLabel.trim(),
-            route: flightRoute.trim(),
-            flightNumber: flightNumber.trim(),
-            notes: flightNotes.trim()
-          }
-        : f
-    );
-    onUpdateFlights(updated);
+    if (editingFlight) {
+      const updated = trip.flights.map((f) =>
+        f.id === editingFlight.id
+          ? {
+              ...f,
+              label: flightLabel.trim() || '交通安排',
+              route: flightRoute.trim(),
+              flightNumber: flightNumber.trim(),
+              notes: flightNotes.trim()
+            }
+          : f
+      );
+      onUpdateFlights(updated);
+    } else {
+      const newFlight: FlightInfo = {
+        id: `flight-${Date.now()}`,
+        type: trip.flights.length === 0 ? 'outbound' : 'inbound',
+        label: flightLabel.trim() || '交通安排',
+        route: flightRoute.trim(),
+        flightNumber: flightNumber.trim(),
+        notes: flightNotes.trim()
+      };
+      onUpdateFlights([...trip.flights, newFlight]);
+    }
     setIsFlightModalOpen(false);
   };
 
@@ -233,44 +260,66 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* Flight Information Strip */}
       <section id="flights" className="bg-[#fffdf8] border border-[#d9d3c8] p-4 shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-[#d9d3c8]">
-          {trip.flights.map((f) => (
-            <div key={f.id} className="relative group pt-2 md:pt-0 md:px-4 first:md:pl-0 last:md:pr-0">
-              <div className="flex items-center justify-between">
-                <small className="text-[11px] font-serif-tc tracking-widest text-[#777a74] uppercase flex items-center gap-1">
-                  <Plane className="w-3.5 h-3.5 text-[#6c91a3]" />
-                  {f.label}
-                </small>
-                <button
-                  onClick={() => handleOpenEditFlight(f)}
-                  className="opacity-0 group-hover:opacity-100 text-[11px] font-serif-tc text-[#bc553b] hover:underline flex items-center gap-1 transition-opacity"
-                >
-                  <Edit2 className="w-3 h-3" />
-                  <span>修改</span>
-                </button>
-              </div>
-
-              <b className="block font-serif-tc text-base sm:text-lg text-[#242824] my-1">
-                {f.route}
-              </b>
-
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-[#bc553b] font-mono">{f.flightNumber}</span>
-                {f.notes && (
-                  <>
-                    <span className="text-[#d9d3c8]">|</span>
-                    <span className="text-[#777a74] truncate">{f.notes}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#e8e3d8]">
+          <span className="text-xs font-serif-tc font-semibold text-[#242824] flex items-center gap-1.5">
+            <Plane className="w-3.5 h-3.5 text-[#6c91a3]" />
+            航班與主要交通
+          </span>
+          <button
+            onClick={handleOpenAddFlight}
+            type="button"
+            className="inline-flex items-center gap-1 text-[11px] font-serif-tc text-[#bc553b] hover:text-[#a64730] border border-dashed border-[#d9d3c8] hover:border-[#bc553b] px-2.5 py-1 bg-[#fffdf8] transition-colors"
+            title="新增交通或接駁航班"
+          >
+            <Plus className="w-3 h-3" />
+            <span>新增交通</span>
+          </button>
         </div>
+
+        {trip.flights.length === 0 ? (
+          <div className="text-center py-4 text-xs font-serif-tc text-[#777a74]">
+            尚未新增交通與航班資訊，點擊上方按鈕即可新增。
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-[#d9d3c8]">
+            {trip.flights.map((f) => (
+              <div key={f.id} className="relative group pt-2 md:pt-0 md:px-4 first:md:pl-0 last:md:pr-0">
+                <div className="flex items-center justify-between">
+                  <small className="text-[11px] font-serif-tc tracking-widest text-[#777a74] uppercase flex items-center gap-1">
+                    <Plane className="w-3.5 h-3.5 text-[#6c91a3]" />
+                    {f.label}
+                  </small>
+                  <button
+                    onClick={() => handleOpenEditFlight(f)}
+                    className="opacity-70 group-hover:opacity-100 hover:opacity-100 text-[11px] font-serif-tc text-[#bc553b] hover:underline flex items-center gap-1 transition-opacity cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>修改</span>
+                  </button>
+                </div>
+
+                <b className="block font-serif-tc text-base sm:text-lg text-[#242824] my-1">
+                  {f.route}
+                </b>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-[#bc553b] font-mono">{f.flightNumber}</span>
+                  {f.notes && (
+                    <>
+                      <span className="text-[#d9d3c8]">|</span>
+                      <span className="text-[#777a74] truncate">{f.notes}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Flight Edit Modal */}
-      {isFlightModalOpen && editingFlight && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+      {/* Flight Edit / Add Modal */}
+      {isFlightModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-[#fffdf8] border border-[#d9d3c8] shadow-2xl p-6 relative">
             <button
               onClick={() => setIsFlightModalOpen(false)}
@@ -279,7 +328,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <X className="w-4 h-4" />
             </button>
             <h3 className="font-serif-tc text-lg font-semibold mb-4 text-[#242824]">
-              修改航班資訊
+              {editingFlight ? '修改航班/交通資訊' : '新增航班/交通資訊'}
             </h3>
             <form onSubmit={handleSaveFlight} className="space-y-3 text-xs">
               <div>
@@ -288,7 +337,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="text"
                   value={flightLabel}
                   onChange={(e) => setFlightLabel(e.target.value)}
-                  placeholder="例如：去程 · 1/2 SAT"
+                  placeholder="例如：去程 · 1/2 SAT、回程、新幹線接駁"
                   className="w-full px-3 py-2 bg-[#f5f1e8] border border-[#d9d3c8] focus:border-[#bc553b] focus:outline-hidden"
                   required
                 />
@@ -310,7 +359,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   type="text"
                   value={flightNumber}
                   onChange={(e) => setFlightNumber(e.target.value)}
-                  placeholder="例如：CI 104、航班號碼待補"
+                  placeholder="例如：CI 104、JR 東北新幹線"
                   className="w-full px-3 py-2 bg-[#f5f1e8] border border-[#d9d3c8] focus:border-[#bc553b] focus:outline-hidden"
                 />
               </div>
@@ -324,20 +373,34 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   className="w-full px-3 py-2 bg-[#f5f1e8] border border-[#d9d3c8] focus:border-[#bc553b] focus:outline-hidden"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9d3c8]">
-                <button
-                  type="button"
-                  onClick={() => setIsFlightModalOpen(false)}
-                  className="px-3 py-1.5 text-[#777a74] hover:text-[#242824]"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-1.5 bg-[#bc553b] text-white font-serif-tc hover:bg-[#a64730]"
-                >
-                  儲存
-                </button>
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#d9d3c8]">
+                {editingFlight ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteFlight(editingFlight.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-[#bc553b] hover:bg-[#fbf0f0] border border-transparent hover:border-[#bc553b] font-serif-tc transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>刪除此交通</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsFlightModalOpen(false)}
+                    className="px-3 py-1.5 text-[#777a74] hover:text-[#242824]"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-1.5 bg-[#bc553b] text-white font-serif-tc hover:bg-[#a64730]"
+                  >
+                    儲存
+                  </button>
+                </div>
               </div>
             </form>
           </div>

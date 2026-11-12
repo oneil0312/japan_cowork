@@ -4,6 +4,7 @@ import { auth } from './firebase';
 import { syncUserProfile } from './services/tripService';
 import { initialTripData } from './initialData';
 import { normalizeTrip, getNextDayInfo } from './utils/tripUtils';
+import { Trash2 } from 'lucide-react';
 import { TripPlan, ItineraryItem, DayPlan, FlightInfo, Accommodation, ChecklistItem } from './types';
 import { NavigationRail } from './components/NavigationRail';
 import { HeroSection } from './components/HeroSection';
@@ -49,6 +50,9 @@ export default function App() {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isPrintViewOpen, setIsPrintViewOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+
+  // Day deletion confirmation state
+  const [dayToDelete, setDayToDelete] = useState<{ index: number; day: DayPlan } | null>(null);
 
   // Undo delete toast state
   const [toast, setToast] = useState<{
@@ -278,15 +282,41 @@ export default function App() {
     showToast(`已新增 Day ${nextDayNum} (${nextDate})`);
   };
 
-  const handleDeleteDay = (index: number) => {
-    if (trip.days.length <= 1) return;
-    const removedDay = trip.days[index];
+  const handleRequestDeleteDay = (index: number) => {
+    if (trip.days.length <= 1) {
+      showToast('至少需要保留一天日程');
+      return;
+    }
+    const day = trip.days[index];
+    if (!day) return;
+    setDayToDelete({ index, day });
+  };
+
+  const handleConfirmDeleteDay = () => {
+    if (!dayToDelete) return;
+    const { index, day: removedDay } = dayToDelete;
+    const originalIndex = index;
+
     setTrip((prev) => ({
       ...prev,
       days: prev.days.filter((_, idx) => idx !== index)
     }));
-    setActiveDayIndex(Math.max(0, index - 1));
-    showToast(`已刪除 Day ${index + 1} (${removedDay.date})`);
+
+    setActiveDayIndex((curr) => {
+      if (curr >= trip.days.length - 1) return Math.max(0, trip.days.length - 2);
+      return curr;
+    });
+
+    setDayToDelete(null);
+
+    showToast(`已刪除 Day ${originalIndex + 1} (${removedDay.date || removedDay.title})`, () => {
+      setTrip((prev) => {
+        const restored = [...prev.days];
+        restored.splice(originalIndex, 0, removedDay);
+        return { ...prev, days: restored };
+      });
+      setActiveDayIndex(originalIndex);
+    });
   };
 
   const handleDuplicateDay = (index: number) => {
@@ -416,7 +446,7 @@ export default function App() {
               activeDayIndex={activeDayIndex}
               onSelectDay={(idx) => setActiveDayIndex(idx)}
               onAddDay={handleAddDay}
-              onDeleteDay={handleDeleteDay}
+              onDeleteDay={handleRequestDeleteDay}
               onDuplicateDay={handleDuplicateDay}
               onMoveDay={handleMoveDay}
               onEditDayInfo={handleOpenEditDayInfo}
@@ -439,6 +469,7 @@ export default function App() {
                     onToggleComplete={handleToggleComplete}
                     onEditDay={() => handleOpenEditDayInfo(activeDayIndex)}
                     onMoveStopToDay={handleMoveStopToDay}
+                    onDeleteDay={handleRequestDeleteDay}
                   />
                 )}
               </div>
@@ -506,7 +537,46 @@ export default function App() {
         day={trip.days[editingDayIndex] || null}
         dayIndex={editingDayIndex}
         availableNodes={trip.mapNodes}
+        totalDays={trip.days.length}
+        onDeleteDay={handleRequestDeleteDay}
       />
+
+      {/* In-App Confirm Delete Day Modal */}
+      {dayToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-[#fffdf8] border border-[#d9d3c8] shadow-2xl p-6 relative">
+            <h3 className="font-serif-tc text-lg font-bold text-[#bc553b] flex items-center gap-2 mb-2">
+              <Trash2 className="w-5 h-5 text-[#bc553b]" />
+              <span>確認刪除日程</span>
+            </h3>
+            <p className="font-sans-tc text-sm text-[#242824] leading-relaxed mb-3">
+              確定要刪除 <strong>Day {dayToDelete.index + 1}（{dayToDelete.day.date} · {dayToDelete.day.title}）</strong> 嗎？
+            </p>
+            {dayToDelete.day.stops.length > 0 && (
+              <div className="bg-[#fbf0f0] border border-[#f1d0d0] text-xs text-[#bc553b] p-3 mb-4 leading-relaxed font-sans-tc">
+                ⚠️ 此天內安排的 <strong>{dayToDelete.day.stops.length} 個行程景點</strong> 將會一併移除。
+                <div className="text-[11px] text-[#777a74] mt-1">（刪除後仍可點擊畫面下方「復原」按鈕立即還原）</div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#d9d3c8]">
+              <button
+                type="button"
+                onClick={() => setDayToDelete(null)}
+                className="px-4 py-2 text-xs font-serif-tc text-[#777a74] hover:text-[#242824] hover:bg-[#f5f1e8] border border-[#d9d3c8] transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDay}
+                className="px-5 py-2 text-xs font-serif-tc text-white bg-[#bc553b] hover:bg-[#a64730] transition-colors shadow-xs tracking-wider"
+              >
+                確認刪除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Trip Settings Modal */}
       <TripSettingsModal
