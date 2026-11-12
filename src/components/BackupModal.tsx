@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { normalizeTrip } from '../utils/tripUtils';
 import { X, Download, Upload, RotateCcw, Check, AlertCircle } from 'lucide-react';
 import { TripPlan } from '../types';
 
@@ -51,13 +52,17 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         if (!parsed.days || !Array.isArray(parsed.days)) {
           throw new Error('匯入的檔案格式不符合行程手帳規範（缺少 days 陣列）。');
         }
-        onImportTrip(parsed);
-        setImportStatus(`成功匯入「${parsed.title || '旅行計畫'}」，共 ${parsed.days.length} 天日程！`);
+        const normalized = normalizeTrip(parsed);
+        if (!normalized) throw new Error('匯入的檔案內容無法辨識。');
+        onImportTrip(normalized);
+        setImportStatus(`成功匯入「${normalized.title}」，共 ${normalized.days.length} 天日程！`);
       } catch (err: any) {
         setErrorMsg(err.message || '無法解析 JSON 檔案，請確認格式正確。');
       }
     };
+    reader.onerror = () => setErrorMsg('讀取檔案失敗，請重試。');
     reader.readAsText(file);
+    e.target.value = ''; // 允許重複選同一個檔案
   };
 
   return (

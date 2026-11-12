@@ -31,17 +31,18 @@ export async function saveTripToCloud(trip: TripPlan, user: User, makePublic?: b
   const tripId = trip.id;
   const path = `trips/${tripId}`;
 
-  // Ensure owner is included in members and memberEmails
-  const existingMembers = trip.members || [];
-  const updatedMembers = existingMembers.includes(user.uid) 
-    ? existingMembers 
-    : [user.uid, ...existingMembers];
+  const isOwner = !trip.ownerId || trip.ownerId === user.uid;
 
-  const existingEmails = trip.memberEmails || [];
-  const userEmail = user.email ? user.email.toLowerCase().trim() : '';
-  const updatedMemberEmails = (userEmail && !existingEmails.includes(userEmail))
-    ? [userEmail, ...existingEmails]
-    : existingEmails;
+  // 只有建立者可以異動成員名單；一般成員儲存時保持名單原樣（否則會被安全規則拒絕）
+  let updatedMembers = trip.members || [];
+  let updatedMemberEmails = trip.memberEmails || [];
+  if (isOwner) {
+    if (!updatedMembers.includes(user.uid)) updatedMembers = [user.uid, ...updatedMembers];
+    const userEmail = user.email ? user.email.toLowerCase().trim() : '';
+    if (userEmail && !updatedMemberEmails.includes(userEmail)) {
+      updatedMemberEmails = [userEmail, ...updatedMemberEmails];
+    }
+  }
 
   const payload: TripPlan = {
     ...trip,
@@ -50,7 +51,7 @@ export async function saveTripToCloud(trip: TripPlan, user: User, makePublic?: b
     ownerName: trip.ownerName || user.displayName || user.email?.split('@')[0] || '旅人',
     members: updatedMembers,
     memberEmails: updatedMemberEmails,
-    isPublic: makePublic !== undefined ? makePublic : (trip.isPublic ?? false),
+    isPublic: isOwner && makePublic !== undefined ? makePublic : (trip.isPublic ?? false),
     createdAt: trip.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };

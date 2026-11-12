@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './firebase';
 import { syncUserProfile } from './services/tripService';
 import { initialTripData } from './initialData';
+import { normalizeTrip, getNextDayInfo } from './utils/tripUtils';
 import { TripPlan, ItineraryItem, DayPlan, FlightInfo, Accommodation, ChecklistItem } from './types';
 import { NavigationRail } from './components/NavigationRail';
 import { HeroSection } from './components/HeroSection';
@@ -24,10 +25,8 @@ export default function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.days && Array.isArray(parsed.days)) {
-          return parsed;
-        }
+        const normalized = normalizeTrip(JSON.parse(saved));
+        if (normalized) return normalized;
       }
     } catch (e) {
       console.warn('Failed to read stored itinerary data:', e);
@@ -84,13 +83,21 @@ export default function App() {
     }
   }, [trip.days.length, activeDayIndex]);
 
-  // Show auto-dismissing toast
+  // Show auto-dismissing toast (新的 toast 會取消前一個的計時器)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((message: string, undoAction?: () => void) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ message, undoAction });
-    const timer = setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToast(null);
+      toastTimerRef.current = null;
     }, 4500);
-    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   const currentDay = trip.days[activeDayIndex] || trip.days[0];
@@ -218,7 +225,6 @@ export default function App() {
       });
       if (!movedStop) return prev;
 
-      const targetDay = prev.days.find((d) => d.id === targetDayId);
       const updatedDays = prev.days.map((d) => {
         if (d.id === targetDayId && movedStop) {
           return { ...d, stops: [...d.stops, movedStop] };
@@ -246,22 +252,11 @@ export default function App() {
   // ================= DAYS MANAGEMENT =================
   const handleAddDay = () => {
     const nextDayNum = trip.days.length + 1;
-    // Guess next date
+    // 依上一天推算下一天（處理月底與跨年進位）
     const lastDay = trip.days[trip.days.length - 1];
-    let nextDate = `1/${nextDayNum + 1}`;
-    let nextWeek = 'SUN';
-
-    if (lastDay) {
-      const match = lastDay.date.match(/(\d+)\/(\d+)/);
-      if (match) {
-        const month = parseInt(match[1], 10);
-        const day = parseInt(match[2], 10);
-        nextDate = `${month}/${day + 1}`;
-      }
-      const WEEKS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-      const lastIdx = WEEKS.indexOf(lastDay.week);
-      nextWeek = lastIdx !== -1 ? WEEKS[(lastIdx + 1) % 7] : 'SUN';
-    }
+    const next = getNextDayInfo(lastDay?.date, trip.startDate);
+    const nextDate = next?.date ?? `1/${nextDayNum + 1}`;
+    const nextWeek = next?.week ?? 'SUN';
 
     const newDay: DayPlan = {
       id: `day-${Date.now()}`,
@@ -369,7 +364,7 @@ export default function App() {
   };
 
   const handleImportTrip = (imported: TripPlan) => {
-    setTrip(imported);
+    setTrip(normalizeTrip(imported) ?? initialTripData);
     setActiveDayIndex(0);
   };
 
@@ -469,7 +464,7 @@ export default function App() {
 
           {/* Footer */}
           <footer className="border-t border-[#d9d3c8] pt-6 pb-8 text-xs text-[#777a74] flex flex-col sm:flex-row justify-between items-center gap-3 font-serif-tc">
-            <span>{trip.title} · 旅行規劃手帳 © 2027</span>
+            <span>{trip.title} · 旅行規劃手帳 © {new Date().getFullYear()}</span>
             <span>静けさを、旅する。在白色的季節遇見最靜謐的旅程</span>
           </footer>
         </main>
@@ -545,6 +540,7 @@ export default function App() {
         currentTrip={trip}
         currentUser={currentUser}
         onLoadTrip={(loadedTrip) => {
+          loadedTrip = normalizeTrip(loadedTrip) ?? loadedTrip;
           setTrip(loadedTrip);
           setActiveDayIndex(0);
           showToast(`已載入雲端行程「${loadedTrip.title}」！`);

@@ -72,7 +72,12 @@ service cloud.firestore {
         && incoming().ownerId == existing().ownerId
         && incoming().title is string
         && incoming().title.size() > 0
-        && incoming().title.size() <= 100;
+        && incoming().title.size() <= 100
+        // 只有建立者可以異動成員名單，一般成員只能編輯行程內容
+        && (
+          isTripOwner(existing())
+          || !incoming().diff(existing()).affectedKeys().hasAny(['members', 'memberEmails', 'isPublic'])
+        );
 
       // DELETE: Only the trip owner/creator can delete
       allow delete: if isSignedIn() 

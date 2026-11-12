@@ -55,6 +55,8 @@ export const CloudTripsModal: React.FC<CloudTripsModalProps> = ({
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [memberEmails, setMemberEmails] = useState<string[]>(currentTrip.memberEmails || []);
 
+  const isOwner = !currentTrip.ownerId || currentTrip.ownerId === currentUser?.uid;
+
   useEffect(() => {
     setMemberEmails(currentTrip.memberEmails || []);
   }, [currentTrip]);
@@ -109,10 +111,14 @@ export const CloudTripsModal: React.FC<CloudTripsModalProps> = ({
   // Add a member by email
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOwner) {
+      setErrorMsg('只有建立者可以管理成員名單');
+      return;
+    }
     const email = newMemberEmail.trim().toLowerCase();
     if (!email) return;
 
-    if (!email.includes('@') || !email.includes('.')) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setErrorMsg('請輸入有效的 Email 地址');
       return;
     }
@@ -131,6 +137,7 @@ export const CloudTripsModal: React.FC<CloudTripsModalProps> = ({
 
   // Remove a member
   const handleRemoveMember = (emailToRemove: string) => {
+    if (!isOwner) return;
     const updated = memberEmails.filter((em) => em !== emailToRemove);
     setMemberEmails(updated);
     onUpdateTripMembers(updated);
@@ -379,7 +386,12 @@ export const CloudTripsModal: React.FC<CloudTripsModalProps> = ({
               </p>
 
               {/* Add Member Form */}
-              <form onSubmit={handleAddMember} className="flex gap-2 mb-3">
+              {!isOwner && (
+                <p className="text-[11px] text-[#bc553b] mb-3">
+                  你是受邀成員，可編輯行程內容，但只有建立者能調整成員名單。
+                </p>
+              )}
+              <form onSubmit={handleAddMember} className={`flex gap-2 mb-3 ${isOwner ? '' : 'hidden'}`}>
                 <input
                   type="email"
                   value={newMemberEmail}
@@ -426,6 +438,7 @@ export const CloudTripsModal: React.FC<CloudTripsModalProps> = ({
 
                     <button
                       onClick={() => handleRemoveMember(email)}
+                      hidden={!isOwner}
                       className="p-1 text-[#777a74] hover:text-[#bc553b] transition-colors"
                       title="移除成員權限"
                     >
