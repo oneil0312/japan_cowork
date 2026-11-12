@@ -26,6 +26,8 @@ export function normalizeTrip(raw: unknown): TripPlan | null {
     members: Array.isArray(t.members) ? t.members : [],
     mapNodes: t.mapNodes && typeof t.mapNodes === 'object' ? t.mapNodes : {},
     winterNote: typeof t.winterNote === 'string' ? t.winterNote : '',
+    emergencyInfo: t.emergencyInfo && typeof t.emergencyInfo === 'object' ? t.emergencyInfo : {},
+    weatherCityKey: typeof t.weatherCityKey === 'string' ? t.weatherCityKey : 'aomori',
     days: t.days.map((d, i) => ({
       id: d?.id || `day-${Date.now()}-${i}`,
       date: d?.date || '',

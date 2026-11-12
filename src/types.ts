@@ -53,6 +53,15 @@ export interface MapNode {
   label: string;
 }
 
+export interface EmergencyInfo {
+  passportNumber?: string;
+  insuranceCompany?: string;
+  insurancePolicyNumber?: string;
+  insuranceEmergencyPhone?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+}
+
 export interface TripPlan {
   id: string;
   ownerId?: string;
@@ -79,4 +88,6 @@ export interface TripPlan {
   checklist: ChecklistItem[];
   winterNote: string;
   mapNodes: Record<string, MapNode>;
+  emergencyInfo?: EmergencyInfo;
+  weatherCityKey?: string;
 }

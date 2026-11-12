@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Accommodation, ChecklistItem, DayPlan, MapNode } from '../types';
 
+import { WeatherWidget } from './WeatherWidget';
+
 interface SideColumnProps {
   currentDay: DayPlan;
   currentDayIndex: number;
@@ -20,10 +22,13 @@ interface SideColumnProps {
   stays: Accommodation[];
   checklist: ChecklistItem[];
   winterNote: string;
+  weatherCityKey?: string;
   onSelectDay: (index: number) => void;
   onUpdateStays: (stays: Accommodation[]) => void;
   onUpdateChecklist: (checklist: ChecklistItem[]) => void;
   onUpdateWinterNote: (note: string) => void;
+  onUpdateWeatherCity?: (cityKey: string) => void;
+  onOpenEmergency?: () => void;
 }
 
 export const SideColumn: React.FC<SideColumnProps> = ({
@@ -34,10 +39,13 @@ export const SideColumn: React.FC<SideColumnProps> = ({
   stays,
   checklist,
   winterNote,
+  weatherCityKey,
   onSelectDay,
   onUpdateStays,
   onUpdateChecklist,
-  onUpdateWinterNote
+  onUpdateWinterNote,
+  onUpdateWeatherCity,
+  onOpenEmergency
 }) => {
   // Checklist states
   const [newChecklistText, setNewChecklistText] = useState('');
@@ -139,8 +147,14 @@ export const SideColumn: React.FC<SideColumnProps> = ({
 
   return (
     <aside className="space-y-6">
+      {/* 0. Live Weather & Sunset */}
+      <WeatherWidget 
+        selectedCityKey={weatherCityKey} 
+        onSelectCity={onUpdateWeatherCity} 
+      />
+
       {/* 1. Travel Route Map */}
-      <section className="bg-[#fffdf8] border border-[#d9d3c8] p-5 shadow-xs">
+      <section id="map" className="bg-[#fffdf8] border border-[#d9d3c8] p-5 shadow-xs">
         <div className="flex items-baseline justify-between border-b border-[#d9d3c8] pb-2.5 mb-3">
           <h3 className="font-serif-tc text-base font-semibold tracking-wide text-[#242824] flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-[#bc553b]" />
@@ -426,6 +440,23 @@ export const SideColumn: React.FC<SideColumnProps> = ({
           <p className="text-[#6d716b] leading-relaxed font-sans-tc">
             {winterNote}
           </p>
+        )}
+
+        {/* Emergency Quick Access inside Advisory Card */}
+        {onOpenEmergency && (
+          <div className="mt-4 pt-3 border-t border-[#e5dfd3]">
+            <button
+              onClick={onOpenEmergency}
+              type="button"
+              className="w-full py-2 px-3 bg-[#fff7f4] hover:bg-[#faeae6] border border-[#f5d5cc] text-[#bc553b] text-xs font-serif-tc font-medium flex items-center justify-between transition-colors shadow-xs group"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">🆘</span>
+                <span className="font-bold">日本急難電話速查 & 手指日語</span>
+              </div>
+              <span className="text-[11px] underline text-[#777a74] group-hover:text-[#bc553b]">離線可查 ↗</span>
+            </button>
+          </div>
         )}
       </section>
 

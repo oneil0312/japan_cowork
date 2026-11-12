@@ -14,7 +14,8 @@ import {
   Plane,
   Cloud,
   User as UserIcon,
-  LogIn
+  LogIn,
+  ShieldAlert
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { TripPlan } from '../types';
@@ -28,6 +29,7 @@ interface NavigationRailProps {
   onOpenCloudModal: () => void;
   onResetToDefault: () => void;
   onOpenPrintView: () => void;
+  onOpenEmergencyModal?: () => void;
 }
 
 export const NavigationRail: React.FC<NavigationRailProps> = ({
@@ -38,7 +40,8 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   onOpenBackupModal,
   onOpenCloudModal,
   onResetToDefault,
-  onOpenPrintView
+  onOpenPrintView,
+  onOpenEmergencyModal
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -67,6 +70,16 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {onOpenEmergencyModal && (
+            <button
+              onClick={onOpenEmergencyModal}
+              className="p-1.5 border border-[#bc553b]/40 bg-[#fff7f4] text-[#bc553b] hover:bg-[#bc553b] hover:text-white rounded-xs text-xs font-serif-tc font-bold flex items-center gap-1 transition-colors shadow-xs"
+              title="日本急難電話速查"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span className="text-[11px] hidden xs:inline">急難</span>
+            </button>
+          )}
           <button
             onClick={onOpenCloudModal}
             className="p-1.5 border border-[#d9d3c8] bg-white text-[#6c91a3] hover:text-[#bc553b] rounded-xs"
@@ -191,6 +204,18 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               <Download className="w-3.5 h-3.5" />
               <span>檔案備份</span>
             </button>
+            {onOpenEmergencyModal && (
+              <button
+                onClick={() => {
+                  onOpenEmergencyModal();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-[#bc553b] bg-[#fff7f4] text-[#bc553b] font-medium"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-[#bc553b]" />
+                <span>急難電話速查</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -309,6 +334,15 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <Settings className="w-3.5 h-3.5 text-[#6c91a3]" />
             <span>旅程設定</span>
           </button>
+          {onOpenEmergencyModal && (
+            <button
+              onClick={onOpenEmergencyModal}
+              className="w-full py-1.5 px-2 text-[#bc553b] hover:text-white hover:bg-[#bc553b] border border-[#bc553b]/50 bg-[#fff7f4] transition-colors flex items-center gap-2 group shadow-xs"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-[#bc553b] group-hover:text-white" />
+              <span className="font-medium">急難電話速查</span>
+            </button>
+          )}
         </div>
 
         {/* Japanese Vertical Motto */}
