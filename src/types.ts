@@ -55,6 +55,14 @@ export interface MapNode {
 
 export interface TripPlan {
   id: string;
+  ownerId?: string;
+  ownerEmail?: string;
+  ownerName?: string;
+  members?: string[];
+  memberEmails?: string[];
+  isPublic?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   title: string;
   subtitle: string;
   eyebrow: string;

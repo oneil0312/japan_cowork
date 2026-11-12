@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Plane, Edit2, Clock, Calendar, CheckSquare, Star, X } from 'lucide-react';
+import { Plane, Edit2, Clock, Calendar, CheckSquare, Star, X, Cloud } from 'lucide-react';
+import { User } from 'firebase/auth';
 import { TripPlan, FlightInfo } from '../types';
 
 interface HeroSectionProps {
   trip: TripPlan;
+  currentUser?: User | null;
   onEditTrip: () => void;
   onUpdateFlights: (flights: FlightInfo[]) => void;
+  onOpenCloud?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   trip,
+  currentUser,
   onEditTrip,
-  onUpdateFlights
+  onUpdateFlights,
+  onOpenCloud
 }) => {
   const [countdownText, setCountdownText] = useState('');
   const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
@@ -187,12 +192,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {trip.description}
           </p>
 
-          {/* Countdown & Quick Edit Button */}
-          <div className="flex flex-wrap items-center gap-4 mt-5">
+          {/* Countdown & Quick Edit Button & Cloud Sync */}
+          <div className="flex flex-wrap items-center gap-3 mt-5">
             <div className="font-serif-tc text-sm sm:text-base font-semibold text-[#bc553b] tracking-wider flex items-center gap-1.5 bg-[#f5f1e8]/80 backdrop-blur-xs px-3 py-1 border border-[#e8e3d8]">
               <Clock className="w-4 h-4 text-[#bc553b]" />
               <span>{countdownText}</span>
             </div>
+
+            {onOpenCloud && (
+              <button
+                onClick={onOpenCloud}
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-serif-tc text-[#6c91a3] hover:text-[#242824] border border-[#6c91a3]/60 hover:border-[#6c91a3] bg-white/80 px-2.5 py-1 transition-colors"
+                title="儲存至 Firestore 雲端或切換行程"
+              >
+                <Cloud className="w-3.5 h-3.5 text-[#6c91a3]" />
+                <span>{currentUser ? '雲端已就緒' : '雲端儲存'}</span>
+              </button>
+            )}
 
             <button
               onClick={onEditTrip}

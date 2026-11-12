@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './firebase';
+import { syncUserProfile } from './services/tripService';
 import { initialTripData } from './initialData';
 import { TripPlan, ItineraryItem, DayPlan, FlightInfo, Accommodation, ChecklistItem } from './types';
 import { NavigationRail } from './components/NavigationRail';
@@ -11,6 +14,7 @@ import { DayEditModal } from './components/DayEditModal';
 import { TripSettingsModal } from './components/TripSettingsModal';
 import { BackupModal } from './components/BackupModal';
 import { PrintView } from './components/PrintView';
+import { CloudTripsModal } from './components/CloudTripsModal';
 
 const STORAGE_KEY = 'aomori-travel-planner-v2';
 
@@ -34,6 +38,9 @@ export default function App() {
   // Current active day index
   const [activeDayIndex, setActiveDayIndex] = useState(0);
 
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   // Modals state
   const [isStopModalOpen, setIsStopModalOpen] = useState(false);
   const [editingStop, setEditingStop] = useState<ItineraryItem | null>(null);
@@ -42,12 +49,24 @@ export default function App() {
   const [isTripSettingsOpen, setIsTripSettingsOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isPrintViewOpen, setIsPrintViewOpen] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
 
   // Undo delete toast state
   const [toast, setToast] = useState<{
     message: string;
     undoAction?: () => void;
   } | null>(null);
+
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        syncUserProfile(user).catch(console.error);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -361,9 +380,11 @@ export default function App() {
         {/* Navigation Rail */}
         <NavigationRail
           trip={trip}
+          currentUser={currentUser}
           onOpenAddStop={handleOpenAddStop}
           onOpenTripSettings={() => setIsTripSettingsOpen(true)}
           onOpenBackupModal={() => setIsBackupOpen(true)}
+          onOpenCloudModal={() => setIsCloudModalOpen(true)}
           onResetToDefault={handleResetToDefault}
           onOpenPrintView={() => setIsPrintViewOpen(true)}
         />
@@ -373,8 +394,10 @@ export default function App() {
           {/* Hero Section & Flights */}
           <HeroSection
             trip={trip}
+            currentUser={currentUser}
             onEditTrip={() => setIsTripSettingsOpen(true)}
             onUpdateFlights={handleUpdateFlights}
+            onOpenCloud={() => setIsCloudModalOpen(true)}
           />
 
           {/* Daily Itinerary Section */}
@@ -514,6 +537,25 @@ export default function App() {
           onClose={() => setIsPrintViewOpen(false)}
         />
       )}
+
+      {/* Cloud Firestore Trips & Sync Modal */}
+      <CloudTripsModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        currentTrip={trip}
+        currentUser={currentUser}
+        onLoadTrip={(loadedTrip) => {
+          setTrip(loadedTrip);
+          setActiveDayIndex(0);
+          showToast(`已載入雲端行程「${loadedTrip.title}」！`);
+        }}
+        onTripSaved={() => {
+          showToast(`行程「${trip.title}」已成功儲存至 Firestore！僅本行程成員可讀寫。`);
+        }}
+        onUpdateTripMembers={(memberEmails) => {
+          setTrip((prev) => ({ ...prev, memberEmails }));
+        }}
+      />
     </div>
   );
 }

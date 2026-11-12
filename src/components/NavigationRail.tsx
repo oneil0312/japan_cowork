@@ -11,24 +11,32 @@ import {
   Compass,
   CheckSquare,
   Hotel,
-  Plane
+  Plane,
+  Cloud,
+  User as UserIcon,
+  LogIn
 } from 'lucide-react';
+import { User } from 'firebase/auth';
 import { TripPlan } from '../types';
 
 interface NavigationRailProps {
   trip: TripPlan;
+  currentUser: User | null;
   onOpenAddStop: () => void;
   onOpenTripSettings: () => void;
   onOpenBackupModal: () => void;
+  onOpenCloudModal: () => void;
   onResetToDefault: () => void;
   onOpenPrintView: () => void;
 }
 
 export const NavigationRail: React.FC<NavigationRailProps> = ({
   trip,
+  currentUser,
   onOpenAddStop,
   onOpenTripSettings,
   onOpenBackupModal,
+  onOpenCloudModal,
   onResetToDefault,
   onOpenPrintView
 }) => {
@@ -60,6 +68,13 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
         <div className="flex items-center gap-2">
           <button
+            onClick={onOpenCloudModal}
+            className="p-1.5 border border-[#d9d3c8] bg-white text-[#6c91a3] hover:text-[#bc553b] rounded-xs"
+            title="雲端行程同步"
+          >
+            <Cloud className="w-4 h-4" />
+          </button>
+          <button
             onClick={onOpenAddStop}
             className="p-1.5 bg-[#bc553b] text-white rounded-xs"
             title="新增行程"
@@ -79,6 +94,23 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
       {/* Mobile Slide-down Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-x-0 top-[53px] z-30 bg-[#fffdf8] border-b border-[#d9d3c8] p-5 shadow-xl animate-in slide-in-from-top-2 duration-150">
+          {/* User Status Bar */}
+          <div className="mb-3 pb-3 border-b border-[#e8e3d8] flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-serif-tc">
+              <Cloud className="w-4 h-4 text-[#6c91a3]" />
+              <span>{currentUser ? currentUser.displayName || currentUser.email : '尚未登入 (雲端功能已就緒)'}</span>
+            </div>
+            <button
+              onClick={() => {
+                onOpenCloudModal();
+                setMobileMenuOpen(false);
+              }}
+              className="text-xs text-[#bc553b] underline font-serif-tc"
+            >
+              {currentUser ? '管理雲端行程' : '登入 Firestore'}
+            </button>
+          </div>
+
           <nav className="grid grid-cols-2 gap-2 text-xs font-serif-tc text-[#555c59] mb-4">
             <button
               onClick={() => scrollTo('home')}
@@ -121,6 +153,16 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           <div className="pt-3 border-t border-[#e8e3d8] flex flex-wrap gap-2 text-xs font-serif-tc">
             <button
               onClick={() => {
+                onOpenCloudModal();
+                setMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#6c91a3] text-[#6c91a3] bg-white font-medium"
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>雲端行程庫</span>
+            </button>
+            <button
+              onClick={() => {
                 onOpenTripSettings();
                 setMobileMenuOpen(false);
               }}
@@ -147,7 +189,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 border border-[#d9d3c8] bg-white hover:text-[#bc553b]"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>備份與匯入</span>
+              <span>檔案備份</span>
             </button>
           </div>
         </div>
@@ -168,8 +210,24 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           </div>
         </div>
 
+        {/* User Account / Cloud Status Tag */}
+        <div className="mt-4 pt-3 border-t border-[#e8e3d8]">
+          <button
+            onClick={onOpenCloudModal}
+            className="w-full text-left p-1.5 bg-[#fffdf8] border border-[#d9d3c8] hover:border-[#6c91a3] transition-colors flex items-center justify-between text-xs font-serif-tc group"
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Cloud className="w-3.5 h-3.5 text-[#6c91a3] shrink-0" />
+              <span className="truncate text-[#555c59] group-hover:text-[#242824]">
+                {currentUser ? (currentUser.displayName || '我的雲端') : 'Firestore 雲端'}
+              </span>
+            </div>
+            <span className="text-[10px] text-[#bc553b] shrink-0">同步</span>
+          </button>
+        </div>
+
         {/* Navigation Anchor Links */}
-        <nav className="mt-8 space-y-2 text-xs font-serif-tc">
+        <nav className="mt-6 space-y-2 text-xs font-serif-tc">
           <button
             onClick={() => scrollTo('home')}
             className="w-full text-left py-1.5 px-2 text-[#777a74] hover:text-[#bc553b] hover:bg-[#fffdf8] border-l-2 border-transparent hover:border-[#bc553b] transition-colors flex items-center gap-2"
@@ -224,6 +282,13 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <span>新增行程</span>
           </button>
           <button
+            onClick={onOpenCloudModal}
+            className="w-full py-1.5 px-2 text-[#6c91a3] hover:text-[#242824] hover:bg-[#fffdf8] border border-[#6c91a3]/60 transition-colors flex items-center gap-2"
+          >
+            <Cloud className="w-3.5 h-3.5 text-[#6c91a3]" />
+            <span>雲端行程庫</span>
+          </button>
+          <button
             onClick={onOpenPrintView}
             className="w-full py-1.5 px-2 text-[#777a74] hover:text-[#242824] hover:bg-[#fffdf8] border border-[#d9d3c8] transition-colors flex items-center gap-2"
           >
@@ -235,7 +300,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             className="w-full py-1.5 px-2 text-[#777a74] hover:text-[#242824] hover:bg-[#fffdf8] border border-[#d9d3c8] transition-colors flex items-center gap-2"
           >
             <Download className="w-3.5 h-3.5 text-[#6c91a3]" />
-            <span>備份與匯入</span>
+            <span>檔案備份</span>
           </button>
           <button
             onClick={onOpenTripSettings}

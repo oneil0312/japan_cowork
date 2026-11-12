@@ -1,0 +1,161 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User UID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User avatar photo URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account creation timestamp"
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "Travel itinerary document containing days, stops, and accommodations",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Trip unique identifier"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the trip creator"
+        },
+        "ownerEmail": {
+          "type": "string",
+          "description": "Email of the trip creator"
+        },
+        "ownerName": {
+          "type": "string",
+          "description": "Name of the trip creator"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Trip title"
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Trip subtitle or theme slogan"
+        },
+        "eyebrow": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Trip eyebrow category"
+        },
+        "poem": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Poetic motto"
+        },
+        "dateRange": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Date range string"
+        },
+        "startDate": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Starting date string"
+        },
+        "departureTime": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Departure timestamp for countdown"
+        },
+        "arrivalTime": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Arrival timestamp"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Trip overview description"
+        },
+        "sealText": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Seal stamp label"
+        },
+        "winterNote": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Winter or seasonal travel note"
+        },
+        "flights": {
+          "type": "array",
+          "description": "Flight list"
+        },
+        "days": {
+          "type": "array",
+          "description": "Daily itinerary plans and stops"
+        },
+        "stays": {
+          "type": "array",
+          "description": "Accommodations"
+        },
+        "checklist": {
+          "type": "array",
+          "description": "Packing checklist"
+        },
+        "mapNodes": {
+          "type": "object",
+          "description": "Custom or default map coordinates"
+        },
+        "members": {
+          "type": "array",
+          "description": "List of user UIDs who are members of this trip"
+        },
+        "memberEmails": {
+          "type": "array",
+          "description": "List of user email addresses who are members of this trip"
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether this trip is shared publicly for other users to view"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "ownerId", "title", "days"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/trips/{tripId}": {
+      "schema": "Trip",
+      "description": "Travel itinerary documents created and shared by users"
+    }
+  }
+}

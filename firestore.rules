@@ -1,0 +1,83 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access to any document
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Check if the current user is a valid member of this trip
+    function isTripMember(tripData) {
+      return isSignedIn() && (
+        tripData.ownerId == request.auth.uid ||
+        (tripData.members is list && request.auth.uid in tripData.members) ||
+        (request.auth.token.email != null && tripData.memberEmails is list && request.auth.token.email in tripData.memberEmails)
+      );
+    }
+
+    // Check if the current user is the owner/creator of the trip
+    function isTripOwner(tripData) {
+      return isSignedIn() && tripData.ownerId == request.auth.uid;
+    }
+
+    // User profile collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow delete: if false;
+    }
+
+    // Trip itineraries collection: ONLY signed-in trip members can read and write
+    match /trips/{tripId} {
+      // READ (get, list): Strictly ONLY allowed if signed in and a member of this trip
+      allow get: if isTripMember(existing());
+      allow list: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        (resource.data.members is list && request.auth.uid in resource.data.members) ||
+        (request.auth.token.email != null && resource.data.memberEmails is list && request.auth.token.email in resource.data.memberEmails)
+      );
+
+      // CREATE: Creator must be signed in and set themselves as ownerId
+      allow create: if isSignedIn() 
+        && isValidId(tripId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() <= 100;
+
+      // UPDATE: Strictly ONLY allowed if signed in and is a member of this trip
+      allow update: if isSignedIn() 
+        && isValidId(tripId)
+        && isTripMember(existing())
+        && incoming().ownerId == existing().ownerId
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() <= 100;
+
+      // DELETE: Only the trip owner/creator can delete
+      allow delete: if isSignedIn() 
+        && isValidId(tripId)
+        && isTripOwner(existing());
+    }
+  }
+}
