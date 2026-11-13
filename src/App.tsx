@@ -5,7 +5,7 @@ import { syncUserProfile } from './services/tripService';
 import { initialTripData } from './initialData';
 import { normalizeTrip, getNextDayInfo } from './utils/tripUtils';
 import { Trash2 } from 'lucide-react';
-import { TripPlan, ItineraryItem, DayPlan, FlightInfo, Accommodation, ChecklistItem } from './types';
+import { TripPlan, ItineraryItem, DayPlan, FlightInfo, Accommodation, ChecklistItem, EmergencyInfo } from './types';
 import { NavigationRail } from './components/NavigationRail';
 import { HeroSection } from './components/HeroSection';
 import { DayTabs } from './components/DayTabs';
@@ -17,6 +17,7 @@ import { TripSettingsModal } from './components/TripSettingsModal';
 import { BackupModal } from './components/BackupModal';
 import { PrintView } from './components/PrintView';
 import { CloudTripsModal } from './components/CloudTripsModal';
+import { EmergencyModal } from './components/EmergencyModal';
 
 const STORAGE_KEY = 'aomori-travel-planner-v2';
 
@@ -50,6 +51,7 @@ export default function App() {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isPrintViewOpen, setIsPrintViewOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
   // Day deletion confirmation state
   const [dayToDelete, setDayToDelete] = useState<{ index: number; day: DayPlan } | null>(null);
@@ -387,6 +389,15 @@ export default function App() {
     showToast('手帳封面與旅程設定已儲存');
   };
 
+  const handleUpdateWeatherCity = (weatherCityKey: string) => {
+    setTrip((prev) => ({ ...prev, weatherCityKey }));
+  };
+
+  const handleSaveEmergencyInfo = (emergencyInfo: EmergencyInfo) => {
+    setTrip((prev) => ({ ...prev, emergencyInfo }));
+    showToast('緊急聯絡與保險備忘已儲存');
+  };
+
   const handleResetToDefault = () => {
     setTrip(initialTripData);
     setActiveDayIndex(0);
@@ -412,6 +423,7 @@ export default function App() {
           onOpenCloudModal={() => setIsCloudModalOpen(true)}
           onResetToDefault={handleResetToDefault}
           onOpenPrintView={() => setIsPrintViewOpen(true)}
+          onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -484,10 +496,13 @@ export default function App() {
                   stays={trip.stays}
                   checklist={trip.checklist}
                   winterNote={trip.winterNote}
+                  weatherCityKey={trip.weatherCityKey}
                   onSelectDay={(idx) => setActiveDayIndex(idx)}
                   onUpdateStays={handleUpdateStays}
                   onUpdateChecklist={handleUpdateChecklist}
                   onUpdateWinterNote={handleUpdateWinterNote}
+                  onUpdateWeatherCity={handleUpdateWeatherCity}
+                  onOpenEmergency={() => setIsEmergencyModalOpen(true)}
                 />
               </div>
             </div>
@@ -621,6 +636,14 @@ export default function App() {
         onUpdateTripMembers={(memberEmails) => {
           setTrip((prev) => ({ ...prev, memberEmails }));
         }}
+      />
+
+      {/* Emergency Assistance & Japanese Phrases Modal */}
+      <EmergencyModal
+        isOpen={isEmergencyModalOpen}
+        onClose={() => setIsEmergencyModalOpen(false)}
+        emergencyInfo={trip.emergencyInfo}
+        onSaveEmergencyInfo={handleSaveEmergencyInfo}
       />
     </div>
   );
